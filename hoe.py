@@ -7,7 +7,7 @@ import ntsecuritycon as con
 
 # Create the main application window
 root = tk.Tk()
-root.title("Hold On Everyone")
+root.title("HOE Actions")
 root.geometry("600x400")
 root.configure(bg='#f0f0f0')
 
@@ -33,7 +33,7 @@ def log_action(path):
     history.append(log_entry)
     
     # Append to the log file
-    log_dir = "history"
+    log_dir = "HOE Actions"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     log_file = os.path.join(log_dir, "logs.txt")
@@ -104,7 +104,10 @@ def open_selected(event):
         log_entry = history[selected_index[0]]
         path = log_entry.split(": ")[1]
         if os.path.exists(path):
-            os.startfile(path)
+            if os.path.isdir(path):
+                os.startfile(path)
+            else:
+                os.startfile(os.path.dirname(path))
         else:
             messagebox.showerror("Error", "Path does not exist")
 
