@@ -7,7 +7,7 @@ import ntsecuritycon as con
 
 # Create the main application window
 root = tk.Tk()
-root.title("HOE Actions")
+root.title("Hold On Everyone")
 root.geometry("600x400")
 root.configure(bg='#f0f0f0')
 
@@ -18,7 +18,7 @@ notebook.pack(expand=True, fill='both')
 # Create frames for each tab
 main_frame = ttk.Frame(notebook)
 history_frame = ttk.Frame(notebook)
-notebook.add(main_frame, text='Main')
+notebook.add(main_frame, text='Get Access')
 notebook.add(history_frame, text='History')
 
 # Variables to keep track of selected path and permission state
@@ -33,7 +33,7 @@ def log_action(path):
     history.append(log_entry)
     
     # Append to the log file
-    log_dir = "HOE Actions"
+    log_dir = "history"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     log_file = os.path.join(log_dir, "logs.txt")
@@ -89,7 +89,7 @@ def select_path():
 
 # Function to populate history listbox
 def populate_history():
-    log_dir = "HOE Actions"
+    log_dir = "history"
     log_file = os.path.join(log_dir, "logs.txt")
     if os.path.exists(log_file):
         with open(log_file, "r") as file:
