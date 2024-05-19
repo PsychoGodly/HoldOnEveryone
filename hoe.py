@@ -4,6 +4,8 @@ import win32security
 import win32api
 import ntsecuritycon as con
 import win32con
+import tkinter as tk
+from tkinter import filedialog
 
 # Function to grant permissions
 def grant_permissions(folder_path):
@@ -61,22 +63,32 @@ def revoke_permissions(folder_path):
     except Exception as e:
         print(f"Failed to revoke permissions: {e}")
 
-# Define the folder path here
-folder_path = r'C:\path\to\your\folder'
+# Function to select a folder
+def select_folder():
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    folder_path = filedialog.askdirectory()
+    return folder_path
 
 # Variable to keep track of the permission state
 permissions_granted = False
 
 def toggle_permissions():
-    global permissions_granted
-    if permissions_granted:
-        revoke_permissions(folder_path)
+    global permissions_granted, selected_folder
+    if selected_folder:
+        if permissions_granted:
+            revoke_permissions(selected_folder)
+        else:
+            grant_permissions(selected_folder)
+        permissions_granted = not permissions_granted
     else:
-        grant_permissions(folder_path)
-    permissions_granted = not permissions_granted
+        print("No folder selected.")
+
+# Initial folder selection
+selected_folder = select_folder()
 
 # Set the hotkey to toggle permissions
 keyboard.add_hotkey('ctrl+shift+e', toggle_permissions)
 
-print("Press Ctrl+Shift+E to toggle permissions.")
+print("Press Ctrl+Shift+E to toggle permissions for the selected folder.")
 keyboard.wait('esc')  # Keep the script running
