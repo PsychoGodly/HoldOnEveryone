@@ -39,6 +39,9 @@ def log_action(path):
     log_file = os.path.join(log_dir, "logs.txt")
     with open(log_file, "a") as file:
         file.write(log_entry + "\n")
+    
+    # Update the history listbox
+    history_listbox.insert(tk.END, log_entry)
 
 # Function to grant permissions
 def grant_permissions():
@@ -86,8 +89,13 @@ def select_path():
 
 # Function to populate history listbox
 def populate_history():
-    for entry in history:
-        history_listbox.insert(tk.END, entry)
+    log_dir = "HOE Actions"
+    log_file = os.path.join(log_dir, "logs.txt")
+    if os.path.exists(log_file):
+        with open(log_file, "r") as file:
+            for line in file:
+                history.append(line.strip())
+                history_listbox.insert(tk.END, line.strip())
 
 # Function to open the selected item in the history
 def open_selected(event):
