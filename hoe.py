@@ -1,9 +1,7 @@
 import os
 import keyboard
 import win32security
-import win32api
 import ntsecuritycon as con
-import win32con
 import tkinter as tk
 from tkinter import filedialog
 
@@ -24,7 +22,7 @@ def grant_permissions(folder_path):
         everyone, domain, type = win32security.LookupAccountName("", "Everyone")
 
         # Add an ACE to the DACL that allows full control to 'Everyone'
-        dacl.AddAccessAllowedAce(win32security.ACL_REVISION, con.FILE_ALL_ACCESS, everyone)
+        dacl.AddAccessAllowedAceEx(win32security.ACL_REVISION, con.OBJECT_INHERIT_ACE | con.CONTAINER_INHERIT_ACE, con.FILE_ALL_ACCESS, everyone)
         
         # Set the new DACL for the folder
         sd.SetSecurityDescriptorDacl(1, dacl, 0)
@@ -43,7 +41,7 @@ def revoke_permissions(folder_path):
         # Get the DACL
         dacl = sd.GetSecurityDescriptorDacl()
 
-        # Create a new DACL to replace the old one
+        # Create a new DACL
         new_dacl = win32security.ACL()
 
         # Get the SID for 'Everyone'
@@ -52,9 +50,10 @@ def revoke_permissions(folder_path):
         # Copy all ACEs except those for 'Everyone' to the new DACL
         for i in range(dacl.GetAceCount()):
             ace = dacl.GetAce(i)
+            # Exclude 'Everyone' ACE
             if ace[2] != everyone:
-                new_dacl.AddAce(ace[0], ace[1], ace[2])
-        
+                new_dacl.AddAccessAllowedAceEx(ace[0], ace[1], ace[2], ace[3])
+
         # Set the new DACL for the folder
         sd.SetSecurityDescriptorDacl(1, new_dacl, 0)
         win32security.SetFileSecurity(folder_path, win32security.DACL_SECURITY_INFORMATION, sd)
