@@ -7,7 +7,7 @@ import ntsecuritycon as con
 
 # Create the main application window
 root = tk.Tk()
-root.title("HOE Actions")
+root.title("Hold On Everyone")
 root.geometry("600x400")
 root.configure(bg='#f0f0f0')
 
