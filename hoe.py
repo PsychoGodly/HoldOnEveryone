@@ -1,12 +1,52 @@
 import os
-import keyboard
+import datetime
+import tkinter as tk
+from tkinter import filedialog, messagebox, ttk
 import win32security
 import ntsecuritycon as con
-import tkinter as tk
-from tkinter import filedialog
+
+# Create the main application window
+root = tk.Tk()
+root.title("HOE Actions")
+root.geometry("600x400")
+root.configure(bg='#f0f0f0')
+
+# Create a notebook for tabs
+notebook = ttk.Notebook(root)
+notebook.pack(expand=True, fill='both')
+
+# Create frames for each tab
+main_frame = ttk.Frame(notebook)
+history_frame = ttk.Frame(notebook)
+notebook.add(main_frame, text='Main')
+notebook.add(history_frame, text='History')
+
+# Variables to keep track of selected path and permission state
+selected_path = tk.StringVar()
+history = []
+
+# Function to log actions
+def log_action(path):
+    global history
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = f"{timestamp}: {path}"
+    history.append(log_entry)
+    
+    # Append to the log file
+    log_dir = "HOE Actions"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    log_file = os.path.join(log_dir, "logs.txt")
+    with open(log_file, "a") as file:
+        file.write(log_entry + "\n")
 
 # Function to grant permissions
-def grant_permissions(path):
+def grant_permissions():
+    path = selected_path.get()
+    if not path:
+        messagebox.showwarning("Warning", "Please select a file or folder first.")
+        return
+
     try:
         # Get the security descriptor for the file or folder
         sd = win32security.GetFileSecurity(path, win32security.DACL_SECURITY_INFORMATION)
@@ -31,68 +71,50 @@ def grant_permissions(path):
         sd.SetSecurityDescriptorDacl(1, dacl, 0)
         win32security.SetFileSecurity(path, win32security.DACL_SECURITY_INFORMATION, sd)
         
-        print(f"Granted full control to 'Everyone' for {path}")
+        log_action(path)
+        messagebox.showinfo("Success", "Now you have access")
+        messagebox.showinfo("Note", "You can only revert changes manually")
     except Exception as e:
-        print(f"Failed to grant permissions: {e}")
-
-# Function to revoke permissions
-def revoke_permissions(path):
-    try:
-        # Get the security descriptor for the file or folder
-        sd = win32security.GetFileSecurity(path, win32security.DACL_SECURITY_INFORMATION)
-        
-        # Get the DACL
-        dacl = sd.GetSecurityDescriptorDacl()
-
-        # Create a new DACL
-        new_dacl = win32security.ACL()
-
-        # Get the SID for 'Everyone'
-        everyone, domain, type = win32security.LookupAccountName("", "Everyone")
-
-        # Copy all ACEs except those for 'Everyone' to the new DACL
-        for i in range(dacl.GetAceCount()):
-            ace = dacl.GetAce(i)
-            ace_sid = ace[2]
-            if ace_sid != everyone:
-                new_dacl.AddAceEx(ace[0], ace[1], ace[2], ace[3])
-
-        # Set the new DACL for the file or folder
-        sd.SetSecurityDescriptorDacl(1, new_dacl, 0)
-        win32security.SetFileSecurity(path, win32security.DACL_SECURITY_INFORMATION, sd)
-        
-        print(f"Revoked permissions for 'Everyone' from {path}")
-    except Exception as e:
-        print(f"Failed to revoke permissions: {e}")
+        messagebox.showerror("Error", f"Failed to grant permissions: {e}")
 
 # Function to select a file or folder
 def select_path():
-    root = tk.Tk()
-    root.withdraw()  # Hide the root window
     path = filedialog.askopenfilename()  # Ask for a file
     if not path:  # If no file selected, ask for a folder
         path = filedialog.askdirectory()
-    return path
+    selected_path.set(path)
 
-# Variable to keep track of the permission state
-permissions_granted = False
+# Function to populate history listbox
+def populate_history():
+    for entry in history:
+        history_listbox.insert(tk.END, entry)
 
-def toggle_permissions():
-    global permissions_granted, selected_path
-    if selected_path:
-        if permissions_granted:
-            revoke_permissions(selected_path)
+# Function to open the selected item in the history
+def open_selected(event):
+    selected_index = history_listbox.curselection()
+    if selected_index:
+        log_entry = history[selected_index[0]]
+        path = log_entry.split(": ")[1]
+        if os.path.exists(path):
+            os.startfile(path)
         else:
-            grant_permissions(selected_path)
-        permissions_granted = not permissions_granted
-    else:
-        print("No path selected.")
+            messagebox.showerror("Error", "Path does not exist")
 
-# Initial file or folder selection
-selected_path = select_path()
+# Create UI elements for the main tab
+select_button = tk.Button(main_frame, text="Select File or Folder", command=select_path, bg='#6200ea', fg='#ffffff')
+select_button.pack(pady=10)
+path_entry = tk.Entry(main_frame, textvariable=selected_path, width=80, state='readonly')
+path_entry.pack(pady=10)
+grant_button = tk.Button(main_frame, text="Get Access", command=grant_permissions, bg='#6200ea', fg='#ffffff')
+grant_button.pack(pady=20)
 
-# Set the hotkey to toggle permissions
-keyboard.add_hotkey('ctrl+shift+e', toggle_permissions)
+# Create UI elements for the history tab
+history_label = tk.Label(history_frame, text="History of Permissions Changes", bg='#f0f0f0')
+history_label.pack(pady=10)
+history_listbox = tk.Listbox(history_frame, width=80, height=15)
+history_listbox.pack(pady=10)
+history_listbox.bind('<Double-1>', open_selected)
+populate_history()
 
-print("Press Ctrl+Shift+E to toggle permissions for the selected file or folder.")
-keyboard.wait('esc')  # Keep the script running
+# Start the application
+root.mainloop()
