@@ -50,9 +50,8 @@ def revoke_permissions(folder_path):
         # Copy all ACEs except those for 'Everyone' to the new DACL
         for i in range(dacl.GetAceCount()):
             ace = dacl.GetAce(i)
-            ace_sid = ace[2].GetSidIdentifierAuthority()
-            if ace_sid != everyone.GetSidIdentifierAuthority():
-                new_dacl.AddAce(ace[0], ace[1], ace[2])
+            if ace[2] != everyone:
+                new_dacl.AddAccessAllowedAceEx(ace[0], ace[1], ace[2], ace[3])
 
         # Set the new DACL for the folder
         sd.SetSecurityDescriptorDacl(1, new_dacl, 0)
